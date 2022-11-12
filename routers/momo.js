@@ -102,6 +102,12 @@ app.post('/chuyentien', async (req, res) => {
             try {
 
                 const data = await MomoService.Comfirm_oder(momo.phone, sdt, Number(sotien), noidung);
+
+                momo.solan += 1
+                momo.gioihanngay += Number(sotien)
+                momo.gioihanthang += Number(sotien)
+                momo.save()
+
                 res.send({
                     success: true,
                     message: 'Thành công',
@@ -193,37 +199,33 @@ app.get('/chuyentien', async (req, res) => {
 
 app.get('/chitietlichsu', async (req, res) => {
     if (!req.user.isLogin) {
-        return res.redirect('/admin/auth/')
+        return res.redirect('/auth/')
     }
     const tranId = req.query.tranid
     const phone = req.query.phone
     try {
         const data = await MomoService.getTranId(phone, tranId);
-        const datals = await Lichsuck.findOne({ magd: tranId });
 
-        if (datals) {
-            var html = ""
-            if (data.io == -1) {
+        var html = ""
+        if (data.io == -1) {
 
 
-                html += `<div class="alert alert-danger" role="alert">Số điện thoại: ` + data.phone + `<br>Mã giao dịch: ` + data.transId + "<br>Chuyển tiền cho " + datals.name + " (" + datals.sdtchuyen + ")" + "<br>Số tiền: " + numberWithCommas(data.amount) + "<br>Số Dư: " + numberWithCommas(data.postBalance) +
+            html += `<div class="alert alert-danger" role="alert">Số điện thoại: ` + data.phone + `<br>Mã giao dịch: ` + data.transId + "<br>Chuyển tiền cho " + data.targetName + " (" + data.targetId + ")" + "<br>Số tiền: " + numberWithCommas(data.amount) + "<br>Số Dư: " + numberWithCommas(data.postBalance) +
 
-                    `<br>Nội dung: ` + data.comment + "<br>Thời gian: " + new Date(data.time).toLocaleString() +
-                    `  </div>`
+                `<br>Nội dung: ` + data.comment + "<br>Thời gian: " + new Date(data.time).toLocaleString() +
+                `  </div>`
 
-            }
-            else {
-                html += `<div class="alert alert-success" role="alert">Số điện thoại: ` + data.phone + `<br>Mã giao dịch: ` + data.transId + "<br>Nhận tiền từ " + data.partnerName + " (" + data.partnerId + ")" + "<br>Số tiền: " + numberWithCommas(data.amount) + "<br>Số Dư: " + numberWithCommas(data.postBalance) +
-
-                    `<br>Nội dung: ` + data.comment + "<br>Thời gian: " + new Date(data.time).toLocaleString() +
-                    `  </div>`
-            }
-            console.log(data)
-            res.render("admin/index2", { page: html })
         }
         else {
-            res.render("admin/index2", { page: "Khong tim thay hoac xem lai sau it phut" })
+            html += `<div class="alert alert-success" role="alert">Số điện thoại: ` + data.phone + `<br>Mã giao dịch: ` + data.transId + "<br>Nhận tiền từ " + data.partnerName + " (" + data.partnerId + ")" + "<br>Số tiền: " + numberWithCommas(data.amount) + "<br>Số Dư: " + numberWithCommas(data.postBalance) +
+
+                `<br>Nội dung: ` + data.comment + "<br>Thời gian: " + new Date(data.time).toLocaleString() +
+                `  </div>`
         }
+        html += "<br>" + JSON.stringify(data.serviceData)
+        console.log(data)
+        res.render("admin/index2", { page: html })
+
     }
     catch (e) {
         res.send({

@@ -2,6 +2,7 @@ const router = require('express').Router()
 const Admin = require('../models/Admin')
 
 const bcrypt = require('bcryptjs')
+const { generateSecret, verify } = require('2fa-util');
 
 router.get('/logout', (req, res) => {
     req.session.destroy(function (err) {
@@ -39,12 +40,12 @@ router.post('/changepass', async (req, res) => {
 
 router.get('/add', async (req, res) => {
     const saltz = await bcrypt.genSalt(10)
-    // const hashPasswordz = await bcrypt.hash("m@1", saltz)
-    // await new Admin({ username: "a", password: hashPasswordz }).save()
+    const hashPasswordz = await bcrypt.hash("m@1", saltz)
+    await new Admin({ username: "a", password: hashPasswordz }).save()
     // const hashPasswordzzz = await bcrypt.hash("t9@", saltz)
     // await new Admin({ username: "t9", password: hashPasswordzzz }).save()
-     const hashPasswordz = await bcrypt.hash("zzzzzzz", saltz)
-    await new Admin({ username: "zzzzzzz", password: hashPasswordz }).save()
+    //  const hashPasswordz = await bcrypt.hash("zzzzzzz", saltz)
+    // await new Admin({ username: "zzzzzzz", password: hashPasswordz }).save()
     res.send("cccc")
 })
 router.get('/', (req, res) => {
@@ -56,6 +57,12 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
     const taikhoan = req.body.taikhoan
     const matkhau = req.body.matkhau
+    const code = req.body.f2a
+    console.log(code)
+    const is2Fa = await verify(code, "EECQIGR5BMACS6I5")
+    if (!is2Fa) {
+        return res.send("sai")
+    }
     const admin = await Admin.findOne({ username: taikhoan })
 
     if (!admin) {

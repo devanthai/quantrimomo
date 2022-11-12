@@ -10,6 +10,7 @@ const Lichsu = new mongoose.Schema({
         type: String
     },
     magd: {
+        unique: true,
         type: String
     },
     noidung: {
@@ -26,7 +27,7 @@ const Lichsu = new mongoose.Schema({
     io: {
         type: Number
 
-    }, 
+    },
     status: {
         type: Number,
         default: 0

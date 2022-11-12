@@ -432,11 +432,11 @@ async function getLink(phone) {
 		url = "https://api.momo.vn/p2p/money-request-link/",
 		times = new Date().getTime(),
 
-		
+
 
 		data = {
-			app_code:"3.1.14",
-			msgtype:"GET_CUSTOM_MONEY_REQUEST_LINKS",
+			app_code: "3.1.14",
+			msgtype: "GET_CUSTOM_MONEY_REQUEST_LINKS",
 			userId: phone,
 			fromTime: times - begin * 1000,
 			toTime: times,
@@ -453,7 +453,7 @@ async function getLink(phone) {
 	if (!res.success) throw new Error(res.errorDesc || "Hệ thống momo đang lỗi");
 	var transactions = [],
 		datas = res.message.data.notifications;
-		console.log(res)
+	console.log(res)
 	for (var i in datas) {
 		if (datas[i].refId == "receive_money_p2p") {
 			let extra = JSON.parse(datas[i].extra);
@@ -491,7 +491,7 @@ async function getNoti(phone, begin) {
 	if (!res.success) throw new Error(res.errorDesc || "Hệ thống momo đang lỗi");
 	var transactions = [],
 		datas = res.message.data.notifications;
-		//console.log(res.message.data.notifications)
+	//console.log(res.message.data.notifications)
 	for (var i in datas) {
 		if (datas[i].refId == "receive_money_p2p") {
 			let extra = JSON.parse(datas[i].extra);
@@ -578,21 +578,20 @@ async function getTranId(phone, tranId, currentAccounts = null) {
 	let oldData = {};
 	let comment = null;
 
-	//try {
-	if (!response.momoMsg.serviceData) {
-		oldData = JSON.parse(response.momoMsg.oldData);
-
-		comment = oldData.commentValue;
-	} else {
-		oldData = JSON.parse(response.momoMsg.serviceData);
-		comment = oldData.COMMENT_VALUE;
-	}
-	//	} catch {  }
-	if(comment==undefined)
-	{
-		console.log(response.momoMsg)
-	}
-	console.log(comment)
+	// //try {
+	// if (!response.momoMsg.serviceData) {
+	// 	oldData = JSON.parse(response.momoMsg.oldData);
+	// 	comment = oldData.commentValue;
+	// } else {
+	// 	oldData = JSON.parse(response.momoMsg.serviceData);
+	// 	comment = oldData.COMMENT_VALUE;
+	// }
+	// //	} catch {  }
+	// if(comment==undefined)
+	// {
+	// 	console.log(response.momoMsg)
+	// }
+	// console.log(comment)
 
 	var transactions = {
 		phone,
@@ -600,6 +599,12 @@ async function getTranId(phone, tranId, currentAccounts = null) {
 		io: response.momoMsg.io,
 		partnerId: response.momoMsg.sourceId,
 		partnerName: response.momoMsg.sourceName,
+
+		targetId: response.momoMsg.targetId,
+		targetName: response.momoMsg.targetName,
+
+		serviceData: response.momoMsg.serviceData,
+
 		amount: response.momoMsg.totalOriginalAmount,
 		postBalance: response.momoMsg.postBalance,
 		time: response.momoMsg.lastUpdate,
@@ -706,29 +711,30 @@ async function getDetails(phone, tranId, currentAccounts = null) {
 	if (response.resultCode != 0) return [response.resultCode, null];
 	let oldData = {};
 	let comment = null;
-	//	console.log(response)
-	// if (!response.momoMsg.serviceData) {
-	// 	oldData = JSON.parse(response.momoMsg.oldData);
+	try {
+		if (!response.momoMsg.serviceData) {
+			oldData = JSON.parse(response.momoMsg.oldData);
 
-	// 	comment = oldData.commentValue;
-	// } else {
-	oldData = JSON.parse(response.momoMsg.serviceData);
-	comment = oldData.COMMENT_VALUE;
-	//	}
-	console.log(comment)
-	var transactions = [
-		0,
-		{
-			io: response.momoMsg.io,
-			transId: response.momoMsg.transId,
-			partnerId: response.momoMsg.sourceId,
-			partnerName: response.momoMsg.sourceName,
-			amount: response.momoMsg.totalOriginalAmount,
-			postBalance: response.momoMsg.postBalance,
-			time: response.momoMsg.lastUpdate,
-			comment: comment,
-		},
-	];
+			comment = oldData.commentValue;
+		} else {
+			oldData = JSON.parse(response.momoMsg.serviceData);
+			comment = oldData.COMMENT_VALUE;
+		}
+	} catch (ex) { console.log(ex) }
+	if (comment == undefined || comment == null) {
+		console.log(response.momoMsg)
+	}
+	const transactions =
+	{
+		io: response.momoMsg.io,
+		transId: response.momoMsg.transId,
+		partnerId: response.momoMsg.sourceId,
+		partnerName: response.momoMsg.sourceName,
+		amount: response.momoMsg.totalOriginalAmount,
+		postBalance: response.momoMsg.postBalance,
+		time: response.momoMsg.lastUpdate,
+		comment: comment,
+	}
 	return transactions;
 }
 async function Transhis_p2p(phone, begin, end, limit) {
@@ -846,7 +852,7 @@ async function Oder_cash(currentAccount, sdt, amount, name, comment) {
 	if (!response.result) {
 		throw new Error(response.errorDesc || "Lỗi dữ liệu từ server Momo.");
 	}
-	
+
 	return {
 		ids: response.momoMsg.replyMsgs[0].ID,
 		tranHisMsg: response.momoMsg.replyMsgs[0].tranHisMsg,
@@ -995,13 +1001,13 @@ async function GENERATE_TOKEN(currentAccount, phone) {
 		},
 		{ data: response } = await axios.post(url, data, {
 			headers: checkheader,
-			validateStatus: ()=>true
+			validateStatus: () => true
 		});
 	if (!response) {
 		throw new Error("Lỗi kết quả dữ liệu từ server Momo.");
 	}
 	//let response = JSON.parse(await decryptAES(res, keyrd));
-	
+
 	if (!response.result) {
 		let checkLogin = await login(phone);
 		if (!checkLogin)

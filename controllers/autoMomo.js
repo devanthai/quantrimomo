@@ -2,8 +2,74 @@ const MomoService = require('./momo.service');
 const Setting = require('../models/Setting')
 const Lichsuck = require('../models/LichSuCk')
 const Momo = require('../models/momo.model')
+const redisCache = require("../redisCache")
+const keyMomo = "momoMagd"
+
+
 
 var CronJob = require('cron').CronJob;
+
+let cronMonthly = new CronJob('0 0 1 * *', function () {
+    console.log("Hello new month~")
+    ResetNewMonth()
+
+}, function () {
+    /* This function is executed when the job stops */
+},
+    true, /* Start the job right now */
+    'Asia/Ho_Chi_Minh' /* Time zone of this job. */
+);
+async function ResetNewMonth() {
+    await Momo.updateMany({}, { gioihanthang: 0 })
+}
+
+
+async function ResetNewDay() {
+    await Momo.updateMany({}, { gioihanngay: 0, solan: 0 })
+    await DayTask.updateMany({}, { totalPlay: 0, moc: 5 })
+}
+
+
+checkMagdRedis = async (magd) => {
+    const napmomo = await redisCache.get(keyMomo)
+    if (!napmomo) {
+        redisCache.set(keyMomo, JSON.stringify({}))
+        return true
+    }
+    else {
+        let jMomos = JSON.parse(napmomo)
+        if (jMomos[magd] != undefined) {
+            return false
+        }
+        else {
+            jMomos[magd] = magd
+            redisCache.set(keyMomo, JSON.stringify(jMomos))
+            return true
+        }
+    }
+}
+deleteMagdRedis = async (magd) => {
+    const napmomo = await redisCache.get(keyMomo)
+    if (!napmomo) {
+        redisCache.set(keyMomo, JSON.stringify({}))
+        return true
+    }
+    else {
+        let jMomos = JSON.parse(napmomo)
+        if (jMomos[magd] != undefined) {
+            console.log("firt: ", jMomos.lenth)
+            delete jMomos[magd]
+            redisCache.set(keyMomo, JSON.stringify(jMomos))
+            console.log("last: ", jMomos.lenth)
+            return true
+        }
+        else {
+            return false
+        }
+    }
+}
+
+
 var cronNewDay = new CronJob('00 00 00 * * *', function () {
     console.log("Hello new day~")
     ResetNewDay()
@@ -36,28 +102,50 @@ async function CheckGd(phone, dateString, setting) {
         var zz = hiss
         hiss = hiss.momoMsg
         if (zz.message == "successfuly") {
-            for (let z = 0; z < hiss.length; z++) {
-                const his = hiss[z]
+            for (const element of hiss) {
+                const his = element
                 const io = his.io
                 const transId = his.transId
-                const postBalance = his.postBalance
-                const checkz = await Lichsuck.findOne({ magd: transId })
-                if (!checkz) {
-                    const data = await MomoService.getTranId(phone.phone, transId);
-                    if (data) {
-                        const partnerId = data.partnerId
-                        const partnerName = data.partnerName
-                        const amount = data.amount
-                        var comment = data.comment
-                      
-                        if (comment == undefined) {
-                            await new Lichsuck({ sdt: phone.phone, sdtchuyen: partnerId, name: partnerName, magd: transId, sotien: amount, io: io, noidung: comment, status: -999 }).save()
+
+                const checkGdredis = await checkMagdRedis(transId)
+
+                if (checkGdredis) {
+                    console.log("check redis: " + checkGdredis, transId)
+                    const postBalance = his.postBalance
+                    const checkz = await Lichsuck.findOne({ magd: transId })
+                    if (!checkz) {
+
+                        try {
+
+                            const data = await MomoService.getTranId(phone.phone, transId);
+                            if (data) {
+                                const partnerId = data.partnerId
+                                const partnerName = data.partnerName
+                                const amount = data.amount
+                                var comment = data.comment
+
+                                if (comment == undefined) {
+                                    await new Lichsuck({ sdt: phone.phone, sdtchuyen: partnerId, name: partnerName, magd: transId, sotien: amount, io: io, noidung: comment, status: -999 }).save()
+                                }
+                                else {
+                                    await new Lichsuck({ sdt: phone.phone, sdtchuyen: partnerId, name: partnerName, magd: transId, sotien: amount, io: io, noidung: comment, status: 1 }).save()
+                                }
+                                if (io == 1) {
+                                    await Momo.findOneAndUpdate({ sdt: phone.phone }, { sotien: postBalance })
+                                }
+                            }
                         }
-                        else {
-                            await new Lichsuck({ sdt: phone.phone, sdtchuyen: partnerId, name: partnerName, magd: transId, sotien: amount, io: io, noidung: comment, status: 1 }).save()
-                        }
-                        if (io == 1) {
-                            await Momo.findOneAndUpdate({ sdt: phone.phone }, { sotien: postBalance })
+                        catch (ex) {
+                            deleteMagdRedis(transId)
+                            if (!ex.toString().includes("commentValue")) {
+                                if (ex.toString().includes("401")) {
+                                    try {
+                                        await MomoService.GENERATE_TOKEN(phone, phone.phone)
+                                    }
+                                    catch { }
+                                }
+                                console.log("gettranid" + phone.phone + ex)
+                            }
                         }
                     }
                 }
@@ -91,7 +179,7 @@ async function AutoFixComment() {
     cuocsfails.forEach(async (element) => {
         try {
             const notis = await MomoService.getNoti(element.sdt, 100000000)
-            console.log("get fix nd "+element.sdt)
+            console.log("get fix nd " + element.sdt)
 
             console.log(notis)
             if (notis.length == 0) {
@@ -113,8 +201,7 @@ async function AutoFixComment() {
                         break
                     }
                 }
-                if(isdone == false)
-                {
+                if (isdone == false) {
                     element.noidung = "Không thể lấy đc nội dung"
                     element.status = 3
                     element.save()

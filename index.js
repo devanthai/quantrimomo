@@ -9,6 +9,7 @@ const Momos = require('./models/momo.model');
 const AutoMomo = require('./controllers/autoMomo');
 var session = require('express-session')
 app.set('trust proxy', 1)
+app.set('trust proxy', true)
 app.use(session({
     resave: true,
     saveUninitialized: true,
@@ -32,35 +33,82 @@ app.get('/', async (req, res) => {
 
 const MomoService = require('./controllers/momo.service');
 
-app.get("/bankAuto", async(req, res) => {
+
+app.post("/getBalance", async (req, res) => {
+    const iprequest = req.headers['x-real-ip'] || req.socket.remoteAddress
+    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186")) {
+        return res.send({ error: true, message: "error not ip alow " + iprequest })
+    }
+    const phone = req.body.phone
+    const momoo = await Momos.findOne({ phone: phone })
+    if (!momoo) {
+        return res.send({ error: true, message: "cannot find phone" })
+    }
+    else {
+        try {
+            const balance = await MomoService.getBalance(momoo.phone)
+            if (balance.balance) {
+                return res.send({ error: false, balance: balance.balance })
+            }
+            else {
+                return res.send({ error: true, message: "cannot get balance" })
+            }
+        }
+        catch {
+            await MomoService.GENERATE_TOKEN(momoo, momoo.phone)
+
+            return res.send({ error: true, message: "cannot get balance" })
+        }
+    }
+})
+
+
+app.get("/bankvip", async (req, res) => {
+    const iprequest = req.headers['x-real-ip'] || req.socket.remoteAddress
+    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186")) {
+        return res.send("error not ip alow " + iprequest)
+    }
     const phone = req.query.phone
     const pass = req.query.pass
     const amount = req.query.amount
     const phoneTarget = req.query.phoneTarget
     const comment = req.query.comment
-    const momo = await Momos.findOne({ phone: phone })
-    if (!momo) {
-        res.send("error")
+    let momo = await Momos.findOne({ phone: phone })
+    const ahihi = req.query.ahihi
+    console.log(ahihi)
+    if (ahihi != 11111) {
+        return res.send("error sai ahihi")
+    }
+    else if (!momo) {
+        res.send("error k tim thay mm")
     }
     else if (momo.pass != pass) {
-        res.send("error")
+        res.send("error sai mmmk")
     }
     else {
         try {
             var ck = await MomoService.Comfirm_oder(phone, phoneTarget, amount, comment)
             if (ck.msg == "Thành công") {
+                momo.solan += 1
+                momo.gioihanngay += Number(amount)
+                momo.gioihanthang += Number(amount)
+                momo.save()
                 res.send("thanhcong")
             }
-        } catch {
-            res.send("error")
+        } catch (ex) {
+            res.send("error " + ex.message)
         }
     }
 })
 app.use('/admin', require('./routers/momo'))
 app.get("/getgd", async (req, res) => {
-    var sdt = req.query.sdt
-    var ls = await LichSuCk.find({ sdt: sdt }).limit(100).sort({ time: -1 })
+    const iprequest = req.headers['x-real-ip'] || req.socket.remoteAddress
+    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186")) {
+        return res.send("error not ip alow " + iprequest)
+    }
+    const sdt = req.query.sdt
+    const ls = await LichSuCk.find({ io: 1, $or: [{ status: 1 }, { status: 3 }] }).limit(100).sort({ time: -1 })
     res.send(ls)
 })
 const server = require('http').createServer(app);
-server.listen(5232, () => console.log('Server Running on port 5232'));
+server.listen(5555, () => console.log('Server Running on port 5555'));

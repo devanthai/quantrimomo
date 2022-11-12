@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
     }
     ,
     magd: {
+        unique: true,
         type: String
     }
     ,
