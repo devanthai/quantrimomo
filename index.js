@@ -36,7 +36,7 @@ const MomoService = require('./controllers/momo.service');
 
 app.post("/getBalance", async (req, res) => {
     const iprequest = req.headers['x-real-ip'] || req.socket.remoteAddress
-    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186")) {
+    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186") && !iprequest.includes("45.32.123.105")) {
         return res.send({ error: true, message: "error not ip alow " + iprequest })
     }
     const phone = req.body.phone
@@ -65,7 +65,7 @@ app.post("/getBalance", async (req, res) => {
 
 app.get("/bankvip", async (req, res) => {
     const iprequest = req.headers['x-real-ip'] || req.socket.remoteAddress
-    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186")) {
+    if (!iprequest.includes("149.28.152.158") && !iprequest.includes("139.180.213.186") && !iprequest.includes("45.32.123.105")) {
         return res.send("error not ip alow " + iprequest)
     }
     const phone = req.query.phone
