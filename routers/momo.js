@@ -244,7 +244,7 @@ app.get('/lichsu', async (req, res) => {
     var date = new Date().toLocaleDateString('en-GB').replaceAll('/', '-')
 
     try {
-        const data = await MomoService.getTranshis(momo.phone, date, date, 10);
+        const data = await MomoService.getTranshis(momo.phone, date, date, 200);
 
 
         var html = ""
