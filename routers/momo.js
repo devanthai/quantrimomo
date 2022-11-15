@@ -244,11 +244,11 @@ app.get('/lichsu', async (req, res) => {
     var date = new Date().toLocaleDateString('en-GB').replaceAll('/', '-')
 
     try {
-        const data = await MomoService.getTranshis(momo.phone, date, date, 100);
+        const data = await MomoService.getTranshis(momo.phone, date, date, 10);
 
 
         var html = ""
-        if (data.message == "successfuly" && data.momoMsg) {
+        if (data.message == "Giao dịch thành công" && data.momoMsg) {
             //console.log(data.momoMsg)
             data.momoMsg.forEach(async (ls) => {
                 if (ls.status == 6) {

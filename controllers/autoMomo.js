@@ -101,7 +101,7 @@ async function CheckGd(phone, dateString, setting) {
         var hiss = await MomoService.getTranshis(phone.phone, dateString, dateString, 10)
         var zz = hiss
         hiss = hiss.momoMsg
-        if (zz.message == "successfuly") {
+        if (zz.message == "Giao dịch thành công") {
             for (const element of hiss) {
                 const his = element
                 const io = his.io

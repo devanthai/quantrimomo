@@ -511,7 +511,7 @@ async function getTranshis(phone, begin, end, limit, currentAccounts = null) {
 	let currentAccount = currentAccounts || (await checkValidSession(phone)),
 		keyrd = randomkey(32),
 		requestkey = encryptRSA(keyrd),
-		url = "https://api.momo.vn/sync/transhis/browse",
+		url = "https://api.momo.vn/transhis/api/transhis/browse",
 		times = new Date().getTime(),
 		data = await encryptAES(
 			JSON.stringify({
@@ -539,6 +539,8 @@ async function getTranshis(phone, begin, end, limit, currentAccounts = null) {
 			headers: checkheader,
 		}),
 		response = JSON.parse(await decryptAES(res, keyrd));
+		console.log(response)
+
 	if (response.resultCode != 0)
 		throw new Error(response.message || "Lỗi chưa xác định");
 	return response;
